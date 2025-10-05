@@ -1,12 +1,15 @@
 PC HMI (Human-Machine Interface) System Dashboard
 =================================================
+<img src="./assets/logo.png" align="left" width="160">
 
 Welcome to the **PC HMI System Dashboard** repository! This is a cross-platform (primarily focused on Windows and Linux/macOS) GUI application built with Python and PyQt6 designed to monitor and display critical system performance metrics, including CPU, GPU, and RAM utilization, in a dedicated, custom window.
 
-The term **HMI** (Human-Machine Interface) reflects its purpose as a dedicated, interactive screen for system status monitoring, often intended for secondary displays or dedicated panel PCs.
+designed with a usecase purpose as a dedicated, interactive screen for system status monitoring, often intended for secondary displays or dedicated panel PCs.
 
 🚀 Features
 -----------
+
+<img src="./assets/ss.png" align="left" width="650">
 
 -   **Real-time Monitoring:** Track CPU, Memory, Disk, and Network usage using `psutil`.
 

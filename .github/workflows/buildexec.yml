@@ -128,7 +128,6 @@ jobs:
           draft: false
           # Snapshot logic: overwrite existing 'snapshot' release and set it as the latest
           overwrite: ${{ needs.determine_release_target.outputs.is_snapshot }}
-          prerelease: ${{ needs.determine_release_target.outputs.is_snapshot }}
           latest: ${{ needs.determine_release_target.outputs.is_snapshot }}
           files: ${{ steps.build.outputs.ARTIFACT_PATH }}
         env:
