@@ -6,7 +6,11 @@ on:
       - main
     tags:
       - 'v*' # Triggers on any tag starting with v (e.g., v1.0.0, v1.0.0-beta)
-
+      
+permissions:
+  contents: write
+  packages: write
+  
 jobs:
   # ----------------------------------------------------------------------------
   # Helper job to determine the release target (snapshot or tagged version)
