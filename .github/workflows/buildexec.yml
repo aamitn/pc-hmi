@@ -122,24 +122,22 @@ jobs:
       - name: Package EXE, installer, and uninstaller into bundle.zip
         id: bundle
         run: |
-          # Create temporary bundle folder
-          BUNDLE_DIR="bundle_temp"
-          mkdir -p $BUNDLE_DIR
+          $bundleDir = "bundle_temp"
+          New-Item -ItemType Directory -Force -Path $bundleDir
 
-          # Copy EXE
-          cp "${{ steps.build.outputs.ARTIFACT_PATH }}" "$BUNDLE_DIR/"
+          # Copy files
+          Copy-Item "dist\pc-hmi.exe" $bundleDir
+          Copy-Item "install.cmd" $bundleDir
+          Copy-Item "uninstall.cmd" $bundleDir
 
-          # Copy installer and uninstaller scripts
-          cp install.cmd "$BUNDLE_DIR/"
-          cp uninstall.cmd "$BUNDLE_DIR/"
+          # Create zip
+          $zipPath = "bundle.zip"
+          if (Test-Path $zipPath) { Remove-Item $zipPath }
+          Compress-Archive -Path "$bundleDir\*" -DestinationPath $zipPath -Force
 
-          # Create zip archive
-          zip -r bundle.zip $BUNDLE_DIR/*
-
-          # Set output variable for the release
-          echo "BUNDLE_PATH=bundle.zip" >> $GITHUB_OUTPUT
-
-        shell: bash
+          # Output path for next step
+          echo "BUNDLE_PATH=$zipPath" >> $env:GITHUB_OUTPUT
+        shell: pwsh
         
       - name: Upload Executable to GitHub Release
         uses: softprops/action-gh-release@v2
