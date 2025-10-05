@@ -1,0 +1,136 @@
+name: CI/CD PyInstaller Build and Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*' # Triggers on any tag starting with v (e.g., v1.0.0, v1.0.0-beta)
+
+jobs:
+  # ----------------------------------------------------------------------------
+  # Helper job to determine the release target (snapshot or tagged version)
+  # ----------------------------------------------------------------------------
+  determine_release_target:
+    runs-on: ubuntu-latest
+    outputs:
+      release_name: ${{ steps.check_tag.outputs.release_name }}
+      tag_name: ${{ steps.check_tag.outputs.tag_name }}
+      is_snapshot: ${{ steps.check_tag.outputs.is_snapshot }}
+    steps:
+      - id: check_tag
+        run: |
+          # Check if the push is a tag (starts with refs/tags/)
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # Formal Tagged Release
+            echo "::set-output name=release_name::Release ${{ github.ref_name }}"
+            echo "::set-output name=tag_name::${{ github.ref_name }}"
+            echo "::set-output name=is_snapshot::false"
+          else
+            # Untagged Push (Snapshot Release)
+            echo "::set-output name=release_name::Snapshot Build"
+            echo "::set-output name=tag_name::snapshot"
+            echo "::set-output name=is_snapshot::true"
+          fi
+
+  # ----------------------------------------------------------------------------
+  # Main build job run across Windows, Linux, and macOS
+  # ----------------------------------------------------------------------------
+  build_and_release:
+    # Wait for the target determination to finish
+    needs: determine_release_target
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          # Define platform-specific variables
+          - os: ubuntu-latest
+            platform_name: Linux
+            exe_ext: "" # Linux executable has no extension
+            data_sep: ":" # PyInstaller data separator for Unix
+          - os: windows-latest
+            platform_name: Windows
+            exe_ext: ".exe"
+            data_sep: ";" # PyInstaller data separator for Windows
+          - os: macos-latest
+            platform_name: macOS
+            exe_ext: "" # macOS executable is inside 'pc-hmi' folder (no ext on file itself)
+            data_sep: ":"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          # Use python3 and pip3 on Unix systems, or standard python/pip on Windows
+          PIP_CMD=pip
+          if [ "${{ matrix.os }}" != "windows-latest" ]; then
+            PIP_CMD=pip3
+          fi
+
+          # Install all core and vendor-specific dependencies for the hmi.py file
+          $PIP_CMD install screeninfo PyQt6 psutil py-cpuinfo pyinstaller \
+                       pynvml GPUtil pyamdgpuinfo pyadl wmi
+
+          # Create a dummy settings.ini if not present (PyInstaller needs it for --add-data)
+          if [ ! -f settings.ini ]; then
+              echo "[Settings]" > settings.ini
+              echo "config_resolution = 1920x1080" >> settings.ini
+              echo "giphy_api_key = PLACEHOLDER" >> settings.ini
+              echo "Created placeholder settings.ini for build."
+          fi
+        shell: bash # Use bash for consistency even on Windows runner
+
+      - name: Run PyInstaller Build
+        id: build
+        run: |
+          # Set the PyInstaller data separator based on the current OS matrix variable
+          PYI_DATA_SEP="${{ matrix.data_sep }}"
+          OUTPUT_NAME="pc-hmi"
+          
+          # Construct and run the PyInstaller command
+          PYINSTALLER_CMD="pyinstaller --noconfirm --onefile --windowed --name=$OUTPUT_NAME \
+              --add-data=settings.ini${PYI_DATA_SEP}. \
+              --collect-all=PyQt6 \
+              --hidden-import=pynvml \
+              --hidden-import=GPUtil \
+              --hidden-import=pyamdgpuinfo \
+              --hidden-import=pyadl \
+              --hidden-import=wmi \
+              --hidden-import=cpuinfo \
+              hmi.py"
+
+          echo "Running command: $PYINSTALLER_CMD"
+          $PYINSTALLER_CMD
+          
+          # Determine the final artifact path for the release step (it's always in dist/)
+          ARTIFACT_PATH="dist/$OUTPUT_NAME${{ matrix.exe_ext }}"
+
+          # Set output variables for use in the next step
+          echo "::set-output name=ARTIFACT_PATH::$ARTIFACT_PATH"
+          echo "::set-output name=ARTIFACT_FILENAME::$OUTPUT_NAME-${{ matrix.platform_name }}${{ matrix.exe_ext }}"
+
+        shell: bash
+        
+      - name: Upload Executable to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # Use values determined by the 'determine_release_target' job
+          tag_name: ${{ needs.determine_release_target.outputs.tag_name }}
+          name: ${{ needs.determine_release_target.outputs.release_name }}
+          draft: false
+          # Snapshot logic: overwrite existing 'snapshot' release and set it as the latest
+          overwrite: ${{ needs.determine_release_target.outputs.is_snapshot }}
+          prerelease: ${{ needs.determine_release_target.outputs.is_snapshot }}
+          latest: ${{ needs.determine_release_target.outputs.is_snapshot }} 
+          files: ${{ steps.build.outputs.ARTIFACT_PATH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
