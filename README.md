@@ -11,7 +11,7 @@ designed with a usecase purpose as a dedicated, interactive screen for system st
 🚀 Features
 -----------
 
-<img src="./assets/ss.png" align="left" width="650">
+<img src="./assets/ss.png" align="left" width="full">
 
 -   **Real-time Monitoring:** Track CPU, Memory, Disk, and Network usage using `psutil`.
 
