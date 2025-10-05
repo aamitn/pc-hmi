@@ -119,6 +119,28 @@ jobs:
 
         shell: bash
         
+       - name: Package EXE, installer, and uninstaller into bundle.zip
+        id: bundle
+        run: |
+          # Create temporary bundle folder
+          BUNDLE_DIR="bundle_temp"
+          mkdir -p $BUNDLE_DIR
+
+          # Copy EXE
+          cp "${{ steps.build.outputs.ARTIFACT_PATH }}" "$BUNDLE_DIR/"
+
+          # Copy installer and uninstaller scripts
+          cp install.cmd "$BUNDLE_DIR/"
+          cp uninstall.cmd "$BUNDLE_DIR/"
+
+          # Create zip archive
+          zip -r bundle.zip $BUNDLE_DIR/*
+
+          # Set output variable for the release
+          echo "BUNDLE_PATH=bundle.zip" >> $GITHUB_OUTPUT
+
+        shell: bash
+        
       - name: Upload Executable to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -129,6 +151,6 @@ jobs:
           # Snapshot logic: overwrite existing 'snapshot' release and set it as the latest
           overwrite: ${{ needs.determine_release_target.outputs.is_snapshot }}
           latest: ${{ needs.determine_release_target.outputs.is_snapshot }}
-          files: ${{ steps.build.outputs.ARTIFACT_PATH }}
+          files: ${{ steps.bundle.outputs.BUNDLE_PATH }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
