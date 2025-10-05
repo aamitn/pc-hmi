@@ -1,5 +1,8 @@
+altgraph==0.17.4
 GPUtil==1.4.0
 nvidia-ml-py==13.580.82
+packaging==25.0
+pefile==2023.2.7
 psutil==7.1.0
 py-cpuinfo==9.0.0
 pyadl==0.1
@@ -8,5 +11,6 @@ PyQt6==6.9.1
 PyQt6-Qt6==6.9.2
 PyQt6_sip==13.10.2
 pywin32==311
+pywin32-ctypes==0.2.3
 screeninfo==0.8.1
 WMI==1.5.1

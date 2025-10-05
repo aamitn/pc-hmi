@@ -1,4 +1,4 @@
-name: CI/CD PyInstaller Build and Release
+name: CI/CD PyInstaller Windows Build and Release
 
 on:
   push:
@@ -32,9 +32,11 @@ jobs:
             echo "::set-output name=tag_name::snapshot"
             echo "::set-output name=is_snapshot::true"
           fi
+        # Note: Using '::set-output' for compatibility with older action runners as well,
+        # though environment files (echo "name=value" >> $GITHUB_OUTPUT) are the modern standard.
 
   # ----------------------------------------------------------------------------
-  # Main build job run across Windows, Linux, and macOS
+  # Main build job restricted to Windows only
   # ----------------------------------------------------------------------------
   build_and_release:
     # Wait for the target determination to finish
@@ -43,21 +45,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # **MODIFIED: Only run on Windows**
+        os: [windows-latest] 
         include:
-          # Define platform-specific variables
-          - os: ubuntu-latest
-            platform_name: Linux
-            exe_ext: "" # Linux executable has no extension
-            data_sep: ":" # PyInstaller data separator for Unix
+          # Define platform-specific variables for Windows
           - os: windows-latest
             platform_name: Windows
             exe_ext: ".exe"
             data_sep: ";" # PyInstaller data separator for Windows
-          - os: macos-latest
-            platform_name: macOS
-            exe_ext: "" # macOS executable is inside 'pc-hmi' folder (no ext on file itself)
-            data_sep: ":"
 
     steps:
       - name: Checkout repository
@@ -70,58 +65,44 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          # Use python3 and pip3 on Unix systems, or standard python/pip on Windows
+          # On Windows, pip is usually available directly.
           PIP_CMD=pip
-          if [ "${{ matrix.os }}" != "windows-latest" ]; then
-            PIP_CMD=pip3
-          fi
-
+          
           echo "Installing CORE dependencies..."
-          # Install core dependencies which are guaranteed to build on all platforms
+          # Install core dependencies
           $PIP_CMD install screeninfo PyQt6 psutil py-cpuinfo pyinstaller GPUtil
 
-          # Install specialized, platform/vendor-specific libraries.
-          # We use '|| true' on Unix systems to prevent the step from failing
-          # if a package (like pyamdgpuinfo or pyadl) cannot be built due to missing
-          # system headers or vendor SDKs. This is common for monitoring tools.
+          # Install specialized hardware dependencies for Windows
           echo "Installing specialized hardware dependencies..."
-          if [ "${{ matrix.os }}" == "windows-latest" ]; then
-              # On Windows, installation typically only fails if python environment is broken
-              $PIP_CMD install wmi pynvml pyadl pyamdgpuinfo
-          else
-              # On Unix/macOS, we allow optional packages to fail (exit code 1 is ignored by || true)
-              $PIP_CMD install pynvml || true
-              $PIP_CMD install pyamdgpuinfo || true
-              $PIP_CMD install pyadl || true
-          fi
+          $PIP_CMD install wmi pynvml pyadl pyamdgpuinfo
           
           # Create a dummy settings.ini if not present (PyInstaller needs it for --add-data)
           if [ ! -f settings.ini ]; then
-              echo "[Settings]" > settings.ini
-              echo "config_resolution = 1920x1080" >> settings.ini
-              echo "giphy_api_key = PLACEHOLDER" >> settings.ini
-              echo "Created placeholder settings.ini for build."
+            echo "[Settings]" > settings.ini
+            echo "config_resolution = 1920x1080" >> settings.ini
+            echo "giphy_api_key = PLACEHOLDER" >> settings.ini
+            echo "Created placeholder settings.ini for build."
           fi
-        shell: bash # Use bash for consistency even on Windows runner
+        shell: bash # Use bash for consistency
 
       - name: Run PyInstaller Build
         id: build
         run: |
-          # Set the PyInstaller data separator based on the current OS matrix variable
+          # Set the PyInstaller data separator based on the current OS matrix variable (which is always ';')
           PYI_DATA_SEP="${{ matrix.data_sep }}"
           OUTPUT_NAME="pc-hmi"
           
           # Construct and run the PyInstaller command
           PYINSTALLER_CMD="pyinstaller --noconfirm --onefile --windowed --name=$OUTPUT_NAME \
-              --add-data=settings.ini${PYI_DATA_SEP}. \
-              --collect-all=PyQt6 \
-              --hidden-import=pynvml \
-              --hidden-import=GPUtil \
-              --hidden-import=pyamdgpuinfo \
-              --hidden-import=pyadl \
-              --hidden-import=wmi \
-              --hidden-import=cpuinfo \
-              hmi.py"
+            --add-data=settings.ini${PYI_DATA_SEP}. \
+            --collect-all=PyQt6 \
+            --hidden-import=pynvml \
+            --hidden-import=GPUtil \
+            --hidden-import=pyamdgpuinfo \
+            --hidden-import=pyadl \
+            --hidden-import=wmi \
+            --hidden-import=cpuinfo \
+            hmi.py"
 
           echo "Running command: $PYINSTALLER_CMD"
           $PYINSTALLER_CMD
@@ -129,9 +110,9 @@ jobs:
           # Determine the final artifact path for the release step (it's always in dist/)
           ARTIFACT_PATH="dist/$OUTPUT_NAME${{ matrix.exe_ext }}"
 
-          # Set output variables for use in the next step
-          echo "::set-output name=ARTIFACT_PATH::$ARTIFACT_PATH"
-          echo "::set-output name=ARTIFACT_FILENAME::$OUTPUT_NAME-${{ matrix.platform_name }}${{ matrix.exe_ext }}"
+          # Set output variables for use in the next step (using the new GITHUB_OUTPUT standard)
+          echo "ARTIFACT_PATH=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
+          echo "ARTIFACT_FILENAME=$OUTPUT_NAME-${{ matrix.platform_name }}${{ matrix.exe_ext }}" >> $GITHUB_OUTPUT
 
         shell: bash
         
@@ -145,7 +126,7 @@ jobs:
           # Snapshot logic: overwrite existing 'snapshot' release and set it as the latest
           overwrite: ${{ needs.determine_release_target.outputs.is_snapshot }}
           prerelease: ${{ needs.determine_release_target.outputs.is_snapshot }}
-          latest: ${{ needs.determine_release_target.outputs.is_snapshot }} 
+          latest: ${{ needs.determine_release_target.outputs.is_snapshot }}
           files: ${{ steps.build.outputs.ARTIFACT_PATH }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
