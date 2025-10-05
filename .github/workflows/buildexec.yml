@@ -76,10 +76,25 @@ jobs:
             PIP_CMD=pip3
           fi
 
-          # Install all core and vendor-specific dependencies for the hmi.py file
-          $PIP_CMD install screeninfo PyQt6 psutil py-cpuinfo pyinstaller \
-                       pynvml GPUtil pyamdgpuinfo pyadl wmi
+          echo "Installing CORE dependencies..."
+          # Install core dependencies which are guaranteed to build on all platforms
+          $PIP_CMD install screeninfo PyQt6 psutil py-cpuinfo pyinstaller GPUtil
 
+          # Install specialized, platform/vendor-specific libraries.
+          # We use '|| true' on Unix systems to prevent the step from failing
+          # if a package (like pyamdgpuinfo or pyadl) cannot be built due to missing
+          # system headers or vendor SDKs. This is common for monitoring tools.
+          echo "Installing specialized hardware dependencies..."
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+              # On Windows, installation typically only fails if python environment is broken
+              $PIP_CMD install wmi pynvml pyadl pyamdgpuinfo
+          else
+              # On Unix/macOS, we allow optional packages to fail (exit code 1 is ignored by || true)
+              $PIP_CMD install pynvml || true
+              $PIP_CMD install pyamdgpuinfo || true
+              $PIP_CMD install pyadl || true
+          fi
+          
           # Create a dummy settings.ini if not present (PyInstaller needs it for --add-data)
           if [ ! -f settings.ini ]; then
               echo "[Settings]" > settings.ini
