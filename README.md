@@ -91,33 +91,11 @@ pip install pyinstaller
 
 Before building, ensure your `settings.ini` file is configured correctly. This file will be bundled directly into the executable.
 
-|
+| Setting           | Description                                                                 |
+|------------------|-----------------------------------------------------------------------------|
+| config_resolution | The target resolution/monitor the HMI should attempt to launch on (e.g., 1920x1080). |
+| giphy_api_key     | Used for Giphy integration (if implemented in `hmi.py`).                   |
 
-Setting
-
- |
-
-Description
-
- |
-|
-
-`config_resolution`
-
- |
-
-The target resolution/monitor the HMI should attempt to launch on (e.g., `1920x1080`).
-
- |
-|
-
-`giphy_api_key`
-
- |
-
-Used for Giphy integration (if implemented in `hmi.py`).
-
- |
 
 ### 3\. Running the Build Script
 

@@ -74,7 +74,7 @@ jobs:
 
           # Install specialized hardware dependencies for Windows
           echo "Installing specialized hardware dependencies..."
-          $PIP_CMD install wmi pynvml pyadl pyamdgpuinfo
+          $PIP_CMD install -r requirements.txt
           
           # Create a dummy settings.ini if not present (PyInstaller needs it for --add-data)
           if [ ! -f settings.ini ]; then
@@ -98,7 +98,6 @@ jobs:
             --collect-all=PyQt6 \
             --hidden-import=pynvml \
             --hidden-import=GPUtil \
-            --hidden-import=pyamdgpuinfo \
             --hidden-import=pyadl \
             --hidden-import=wmi \
             --hidden-import=cpuinfo \
