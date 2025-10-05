@@ -8,7 +8,7 @@ A cross-platform (primarily focused on Windows and Linux/macOS) GUI application 
 
 designed with a usecase purpose as a dedicated, interactive screen for system status monitoring, often intended for secondary displays or dedicated panel PCs.
 
-🚀 Features
+ Features Set
 -----------
 
 <img src="./assets/ss.png" align="left" width="full">
@@ -29,7 +29,7 @@ designed with a usecase purpose as a dedicated, interactive screen for system st
 
 -   **Single-File Executable:** Can be packaged into a single, portable executable using PyInstaller.
 
-🛠️ Developer Setup & Project Structure
+ Developer Setup & Project Structure
 ---------------------------------------
 
 This section is for contributors and developers who want to run the source code directly or modify the application.
@@ -78,7 +78,7 @@ $PYTHON_CMD hmi.py
 
 **Note:** If a `settings.ini` file is not present, the application may create a default one or exit, depending on the internal logic of `hmi.py`.
 
-⚙️ Building the Executable for Distribution
+Building the Executable for Distribution
 -------------------------------------------
 
 The repository includes shell scripts to package the application into a standalone executable for easy distribution.
@@ -143,7 +143,7 @@ After a successful build, the standalone executable will be located in the newly
 
 -   **Windows:**  `dist\pc-hmi.exe`
 
-👨‍💻 Contributing
+ Contributing
 ------------------
 
 We welcome contributions! Please feel free to open an issue or submit a Pull Request.
