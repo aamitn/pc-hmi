@@ -119,7 +119,7 @@ jobs:
 
         shell: bash
         
-       - name: Package EXE, installer, and uninstaller into bundle.zip
+      - name: Package EXE, installer, and uninstaller into bundle.zip
         id: bundle
         run: |
           # Create temporary bundle folder
