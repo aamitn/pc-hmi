@@ -77,7 +77,7 @@ from PyQt6.QtWidgets import (
     QHeaderView, QSizePolicy, QGroupBox, QScrollArea, QDialog
 )
 from PyQt6.QtCore import Qt, QPoint, QTimer, QSize, QRectF, QThread, pyqtSignal, QUrl, QByteArray, QLocale, QDate, QTime, QSize, QRect, QBuffer, QIODevice
-from PyQt6.QtGui import QFont, QScreen, QPainter, QPen, QColor, QBrush, QConicalGradient, QMovie
+from PyQt6.QtGui import QIcon, QFont, QScreen, QPainter, QPen, QColor, QBrush, QConicalGradient, QMovie
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply # Networking imports for GIF fetching
 
 from screeninfo import get_monitors
@@ -2030,6 +2030,17 @@ if __name__ == "__main__":
     
     # Pass settings to the window
     window = SystemDashboard(target_monitor, config_resolution, giphy_api_key)
+   
+    #  START OF ICON SET
+    try:
+        # Replace 'app_icon.png' with the actual path to your icon file
+        icon_path = 'icon.ico' 
+        window.setWindowIcon(QIcon(icon_path))
+        print(f"--- Application icon set using: {icon_path}")
+    except Exception as e:
+        print(f"--- WARNING: Could not set application icon. Error: {e}")
+    #  END OF ICON SET
+   
     window.show()
     
     exit_code = app.exec()

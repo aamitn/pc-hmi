@@ -1,6 +1,8 @@
 PC HMI (Human-Machine Interface) System Dashboard
 =================================================
-<img src="./assets/logo.png" align="left" width="160">
+<img src="./assets/logo.png" align="left" width="250">
+
+[![CI/CD PyInstaller Windows Build and Release](https://github.com/aamitn/pc-hmi/actions/workflows/buildexec.yml/badge.svg)](https://github.com/aamitn/pc-hmi/actions/workflows/buildexec.yml)
 
 Welcome to the **PC HMI System Dashboard** repository! This is a cross-platform (primarily focused on Windows and Linux/macOS) GUI application built with Python and PyQt6 designed to monitor and display critical system performance metrics, including CPU, GPU, and RAM utilization, in a dedicated, custom window.
 
